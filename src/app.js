@@ -1,5 +1,8 @@
+/* eslint-disable strict */
 require('dotenv').config();
 const express = require('express');
+const graphqlHTTP = require('express-graphql');
+const schema = require('./schema/schema');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -23,6 +26,14 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
+app.use(
+  '/api/graphql',
+  graphqlHTTP(req => ({
+    schema,
+    context: req,
+    graphiql: true
+  }))
+);
 
 app.use(function errorHandler(error, req, res, next) {
   let response;

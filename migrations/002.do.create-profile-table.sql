@@ -1,0 +1,7 @@
+CREATE TABLE profile (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  avatar TEXT,
+  age INTEGER,
+  story VARCHAR(1000)  
+);
