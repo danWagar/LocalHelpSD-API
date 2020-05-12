@@ -12,18 +12,45 @@ const UserType = new GraphQLObjectType({
   }),
 });
 
-const HelpOptionType = new GraphQLObjectType({
-  name: 'HelpOptionType',
+const HelpStatusType = new GraphQLObjectType({
+  name: 'HelpStatusType',
   fields: () => ({
-    wants_help: { type: GraphQLBoolean, required: true },
+    user_id: { type: GraphQLInt },
     immunocompromised: { type: GraphQLBoolean, required: true },
     unemployment: { type: GraphQLBoolean, required: true },
     essential: { type: GraphQLBoolean, required: true },
+  }),
+});
+
+const HelpOptionType = new GraphQLObjectType({
+  name: 'HelpOptionType',
+  fields: () => ({
+    user_id: { type: GraphQLInt },
+    wants_help: { type: GraphQLBoolean, required: true },
     grocery_delivery: { type: GraphQLBoolean, required: true },
     walk_dogs: { type: GraphQLBoolean, required: true },
     donations: { type: GraphQLBoolean, required: true },
     counceling: { type: GraphQLBoolean, required: true },
     career_services: { type: GraphQLBoolean, required: true },
+  }),
+});
+
+const HelpType = new GraphQLObjectType({
+  name: 'HelpType',
+  fields: () => ({
+    wants_help: { type: GraphQLBoolean, required: true },
+    help_status: {
+      type: HelpStatusType,
+      resolve: (parent, args, context) => {
+        return service.getProfileHelpStatus(context.body.variables.user_id, context.app.get('db'));
+      },
+    },
+    help_options: {
+      type: HelpOptionType,
+      resolve: (parent, args, context) => {
+        return service.getProfileHelpOptions(context.body.variables.user_id, context.app.get('db'));
+      },
+    },
   }),
 });
 
@@ -35,10 +62,10 @@ const ProfileType = new GraphQLObjectType({
     avatar: { type: GraphQLString },
     neighborhood: { type: GraphQLString },
     story: { type: GraphQLString },
-    help_options: {
-      type: HelpOptionType,
+    help: {
+      type: HelpType,
       resolve: (parent, args, context) => {
-        return service.getProfileHelpOptions(parent.user_id, context.app.get('db'));
+        return service.getProfileHelp(parent.user_id, context.app.get('db'));
       },
     },
   }),

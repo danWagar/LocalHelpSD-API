@@ -16,21 +16,29 @@ const service = {
     return result;
   },
 
+  getProfileHelp: async (user_id, db) => {
+    console.log('in getProfileHelp user_id is ', user_id);
+    const result = await db.select('wants_help').from('profile').where({ user_id }).first();
+    console.log(result);
+    return result;
+  },
+
+  getProfileHelpStatus: async (user_id, db) => {
+    console.log('in getProfileHelpStatus user_id is ', user_id);
+    const result = await db
+      .select('immunocompromised', 'unemployment', 'essential')
+      .from('profile')
+      .where({ user_id })
+      .first();
+
+    return result;
+  },
+
   getProfileHelpOptions: async (user_id, db) => {
     console.log('in db service user_id is ', user_id);
 
     const result = await db
-      .select(
-        'wants_help',
-        'immunocompromised',
-        'unemployment',
-        'essential',
-        'grocery_delivery',
-        'walk_dogs',
-        'donations',
-        'counceling',
-        'career_services'
-      )
+      .select('grocery_delivery', 'walk_dogs', 'donations', 'counceling', 'career_services')
       .from('profile')
       .where({ user_id })
       .first();
