@@ -25,15 +25,15 @@ const UsersService = {
   serializeUser(user) {
     return {
       id: user.id,
-      user_name: xss(user.user_name),
-      date_created: new Date(user.date_created)
+      email: xss(user.email),
+      date_created: new Date(user.date_created),
     };
   },
-  hasUserWithUserName(db, user_name) {
+  hasUserWithEmail(db, email) {
     return db('users')
-      .where({ user_name })
+      .where({ email })
       .first()
-      .then(user => !!user);
+      .then((user) => !!user);
   },
   insertUser(db, newUser) {
     return db
@@ -41,8 +41,8 @@ const UsersService = {
       .into('users')
       .returning('*')
       .then(([user]) => user)
-      .then(user => user);
-  }
+      .then((user) => user);
+  },
 };
 
 module.exports = UsersService;
