@@ -2,13 +2,23 @@
 const graphql = require('graphql');
 const service = require('./service');
 
-const { GraphQLObjectType, GraphQLBoolean, GraphQLString, GraphQLInt, GraphQLSchema } = graphql;
+const {
+  GraphQLObjectType,
+  GraphQLUnionType,
+  GraphQLBoolean,
+  GraphQLString,
+  GraphQLInt,
+  GraphQLList,
+  GraphQLSchema,
+} = graphql;
 
 const UserType = new GraphQLObjectType({
   name: 'UserType',
   fields: () => ({
     id: { type: GraphQLInt },
-    user_name: { type: GraphQLString },
+    email: { type: GraphQLString },
+    first_name: { type: GraphQLString },
+    last_name: { type: GraphQLString },
   }),
 });
 
@@ -68,6 +78,12 @@ const ProfileType = new GraphQLObjectType({
         return service.getProfileHelpOptions(parent.user_id, context.app.get('db'));
       },
     },
+    user: {
+      type: UserType,
+      resolve: (parent, args, context) => {
+        return service.getUserByID(parent.user_id, context.app.get('db'));
+      },
+    },
   }),
 });
 
@@ -76,9 +92,9 @@ const RootQuery = new GraphQLObjectType({
   fields: {
     user: {
       type: UserType,
-      args: { user_name: { type: GraphQLString } },
+      args: { email: { type: GraphQLString } },
       resolve(parent, args, context) {
-        return service.getUserByName(args.user_name, context.app.get('db'));
+        return service.getUserByEmail(args.email, context.app.get('db'));
       },
     },
     profile: {
@@ -88,11 +104,26 @@ const RootQuery = new GraphQLObjectType({
         return service.getProfile(args.user_id, context.app.get('db'));
       },
     },
+    getProfileMatches: {
+      type: GraphQLList(ProfileType),
+      args: {
+        wants_help: { type: GraphQLBoolean, required: true },
+        grocery_delivery: { type: GraphQLBoolean, required: true },
+        walk_dogs: { type: GraphQLBoolean, required: true },
+        donations: { type: GraphQLBoolean, required: true },
+        counceling: { type: GraphQLBoolean, required: true },
+        career_services: { type: GraphQLBoolean, required: true },
+      },
+      resolve(parent, args, context) {
+        console.log('In getProfileMatches', args);
+        return service.getProfileMatches(args, context.app.get('db'));
+      },
+    },
   },
 });
 
 const Mutation = new GraphQLObjectType({
-  name: 'Mutation',
+  name: 'MUTATE_PROFILE',
   fields: {
     addProfile: {
       type: ProfileType,
