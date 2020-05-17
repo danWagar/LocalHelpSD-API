@@ -90,7 +90,7 @@ const MessageType = new GraphQLObjectType({
     receiver_id: { type: GraphQLInt },
     subject: { type: GraphQLString },
     body: { type: GraphQLString },
-    date_sent: { type: GraphQLInt },
+    date_sent: { type: GraphQLString },
   }),
 });
 
@@ -128,11 +128,14 @@ const RootQuery = new GraphQLObjectType({
         return service.getProfileMatches(args, context.app.get('db'));
       },
     },
-    getReceivedMessages: {
+    getMessageHistory: {
       type: GraphQLList(MessageType),
-      args: { user_id: { type: GraphQLInt } },
-      resolve(args, context) {
-        return service.getReceivedMessages(args, context.app.get('db'));
+      args: {
+        sender_id: { type: GraphQLInt, required: true },
+        receiver_id: { type: GraphQLInt, required: true },
+      },
+      resolve(parent, args, context) {
+        return service.getMessageHistory(args, context.app.get('db'));
       },
     },
   },

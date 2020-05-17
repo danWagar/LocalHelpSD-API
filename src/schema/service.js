@@ -91,6 +91,20 @@ const service = {
 
     return result;
   },
+
+  getMessageHistory: async (recipients, db) => {
+    const { sender_id, receiver_id } = recipients;
+
+    const result = await db
+      .select('*')
+      .from('message')
+      .where({ sender_id: sender_id, receiver_id: receiver_id })
+      .orWhere({ sender_id: receiver_id, receiver_id: sender_id })
+      .orderBy('date_sent');
+
+    console.log(result);
+    return result;
+  },
 };
 
 module.exports = service;
