@@ -80,6 +80,17 @@ const service = {
     console.log(result.rows);
     return result.rows;
   },
+
+  insertMessage: async (message, db) => {
+    const result = await db
+      .insert(message)
+      .into('message')
+      .returning('*')
+      .then(([msg]) => msg)
+      .then((msg) => msg);
+
+    return result;
+  },
 };
 
 module.exports = service;

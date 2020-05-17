@@ -2,16 +2,11 @@
 const graphql = require('graphql');
 const service = require('./service');
 
-const {
-  GraphQLObjectType,
-  GraphQLUnionType,
-  GraphQLBoolean,
-  GraphQLString,
-  GraphQLInt,
-  GraphQLList,
-  GraphQLSchema,
-} = graphql;
+const { GraphQLObjectType, GraphQLBoolean, GraphQLString, GraphQLInt, GraphQLList, GraphQLSchema } = graphql;
 
+//
+//Type Definitions
+//
 const UserType = new GraphQLObjectType({
   name: 'UserType',
   fields: () => ({
@@ -87,6 +82,21 @@ const ProfileType = new GraphQLObjectType({
   }),
 });
 
+const MessageType = new GraphQLObjectType({
+  name: 'MessageType',
+  fields: () => ({
+    id: { type: GraphQLInt },
+    sender_id: { type: GraphQLInt },
+    receiver_id: { type: GraphQLInt },
+    subject: { type: GraphQLString },
+    body: { type: GraphQLString },
+    date_sent: { type: GraphQLInt },
+  }),
+});
+
+//
+//Query Definitions
+//
 const RootQuery = new GraphQLObjectType({
   name: 'RootQueryType',
   fields: {
@@ -115,17 +125,23 @@ const RootQuery = new GraphQLObjectType({
         career_services: { type: GraphQLBoolean, required: true },
       },
       resolve(parent, args, context) {
-        console.log('In getProfileMatches', args);
         return service.getProfileMatches(args, context.app.get('db'));
+      },
+    },
+    getReceivedMessages: {
+      type: GraphQLList(MessageType),
+      args: { user_id: { type: GraphQLInt } },
+      resolve(args, context) {
+        return service.getReceivedMessages(args, context.app.get('db'));
       },
     },
   },
 });
 
 const Mutation = new GraphQLObjectType({
-  name: 'MUTATE_PROFILE',
+  name: 'Mutation',
   fields: {
-    addProfile: {
+    postProfile: {
       type: ProfileType,
       args: {
         user_id: { type: GraphQLInt, required: true, unique: true },
@@ -144,6 +160,18 @@ const Mutation = new GraphQLObjectType({
       },
       resolve(parent, args, context) {
         return service.insertProfile(args, context.app.get('db'));
+      },
+    },
+    postMessage: {
+      type: MessageType,
+      args: {
+        sender_id: { type: GraphQLInt, required: true },
+        receiver_id: { type: GraphQLInt, required: true },
+        subject: { type: GraphQLString },
+        body: { type: GraphQLString, require: true },
+      },
+      resolve(parent, args, context) {
+        return service.insertMessage(args, context.app.get('db'));
       },
     },
   },

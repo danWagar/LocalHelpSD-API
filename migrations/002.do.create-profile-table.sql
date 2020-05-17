@@ -14,3 +14,12 @@ CREATE TABLE profile (
   counceling BOOLEAN NOT NULL,
   career_services BOOLEAN NOT NULL
 );
+
+CREATE TABLE message (
+  id SERIAL PRIMARY KEY,
+  sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  subject VARCHAR(150),
+  body TEXT NOT NULL,
+  date_sent TIMESTAMP NOT NULL DEFAULT now()
+);
