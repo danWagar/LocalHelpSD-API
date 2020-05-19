@@ -15,7 +15,6 @@ const service = {
 
   getProfileHelp: async (user_id, db) => {
     const result = await db.select('wants_help').from('profile').where({ user_id }).first();
-    console.log(result);
     return result;
   },
 
@@ -30,15 +29,11 @@ const service = {
   },
 
   getProfileHelpOptions: async (user_id, db) => {
-    console.log('in db service user_id is ', user_id);
-
     const result = await db
       .select('grocery_delivery', 'walk_dogs', 'donations', 'counceling', 'career_services')
       .from('profile')
       .where({ user_id })
       .first();
-
-    console.log('in getProfileHelpOptions result is ', result);
 
     return result;
   },
@@ -56,13 +51,10 @@ const service = {
       .where({ email })
       .first();
 
-    console.log(result);
-
     return result;
   },
 
   getProfileMatches: async (help_options, db) => {
-    console.log('in getProfileMatches ', help_options);
     const { wants_help, grocery_delivery, walk_dogs, donations, counceling, career_services } = help_options;
     const result = await db.raw(
       `
@@ -77,11 +69,42 @@ const service = {
       `
     );
 
-    console.log(result.rows);
     return result.rows;
   },
 
+  getMessageThread: async (users, db) => {
+    const { created_by, recipient } = users;
+
+    const msgThread = await db
+      .select('*')
+      .from('message_thread')
+      .where({ created_by: created_by, recipient: recipient })
+      .orWhere({ created_by: recipient, recipient: created_by })
+      .then((thread) => {
+        if (thread.length > 1) throw new Error('msgThreadID result should be singular');
+        return thread[0];
+      });
+
+    return msgThread;
+  },
+
+  createNewMessageThread: async (created_by, recipient, db) => {
+    const thread = await db
+      .insert({ created_by: created_by, recipient: recipient })
+      .into('message_thread')
+      .returning('*')
+      .then(([thread]) => thread)
+      .then((thread) => thread);
+
+    return thread;
+  },
+
   insertMessage: async (message, db) => {
+    if (!message.thread_id) {
+      const messageThread = await service.createNewMessageThread(message.sender_id, message.receiver_id, db);
+      message.thread_id = messageThread.id;
+    }
+
     const result = await db
       .insert(message)
       .into('message')
@@ -92,15 +115,9 @@ const service = {
     return result;
   },
 
-  getMessageHistory: async (recipients, db) => {
-    const { sender_id, receiver_id } = recipients;
-
-    const result = await db
-      .select('*')
-      .from('message')
-      .where({ sender_id: sender_id, receiver_id: receiver_id })
-      .orWhere({ sender_id: receiver_id, receiver_id: sender_id })
-      .orderBy('date_sent');
+  getMessageHistory: async (thread_id, db) => {
+    console.log(thread_id);
+    const result = await db.select('*').from('message').where(thread_id).orderBy('date_sent');
 
     console.log(result);
     return result;

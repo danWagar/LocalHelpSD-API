@@ -15,11 +15,18 @@ CREATE TABLE profile (
   career_services BOOLEAN NOT NULL
 );
 
+CREATE TABLE message_thread (
+  id SERIAL PRIMARY KEY,
+  created_by INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  recipient INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL
+);
+
 CREATE TABLE message (
   id SERIAL PRIMARY KEY,
+  thread_id INTEGER REFERENCES message_thread(id) ON DELETE CASCADE NOT NULL,
   sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   subject VARCHAR(150),
   body TEXT NOT NULL,
-  date_sent TIMESTAMP NOT NULL DEFAULT now()
+  date_sent TIMESTAMPTZ NOT NULL DEFAULT now()
 );

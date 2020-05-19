@@ -82,10 +82,20 @@ const ProfileType = new GraphQLObjectType({
   }),
 });
 
+const MessageThreadType = new GraphQLObjectType({
+  name: 'MessageThreadType',
+  fields: () => ({
+    id: { type: GraphQLInt },
+    created_by: { type: GraphQLInt },
+    recipient: { type: GraphQLInt },
+  }),
+});
+
 const MessageType = new GraphQLObjectType({
   name: 'MessageType',
   fields: () => ({
     id: { type: GraphQLInt },
+    thread_id: { type: GraphQLInt },
     sender_id: { type: GraphQLInt },
     receiver_id: { type: GraphQLInt },
     subject: { type: GraphQLString },
@@ -128,13 +138,23 @@ const RootQuery = new GraphQLObjectType({
         return service.getProfileMatches(args, context.app.get('db'));
       },
     },
+    getMessageThread: {
+      type: MessageThreadType,
+      args: {
+        created_by: { type: GraphQLInt },
+        recipient: { type: GraphQLInt },
+      },
+      resolve(parent, args, context) {
+        return service.getMessageThread(args, context.app.get('db'));
+      },
+    },
     getMessageHistory: {
       type: GraphQLList(MessageType),
       args: {
-        sender_id: { type: GraphQLInt, required: true },
-        receiver_id: { type: GraphQLInt, required: true },
+        thread_id: { type: GraphQLInt, required: true },
       },
       resolve(parent, args, context) {
+        console.log('thread_id is ', args.thread_id);
         return service.getMessageHistory(args, context.app.get('db'));
       },
     },
@@ -168,8 +188,9 @@ const Mutation = new GraphQLObjectType({
     postMessage: {
       type: MessageType,
       args: {
-        sender_id: { type: GraphQLInt, required: true },
-        receiver_id: { type: GraphQLInt, required: true },
+        thread_id: { type: GraphQLInt },
+        sender_id: { type: GraphQLInt, require: true },
+        receiver_id: { type: GraphQLInt, require: true },
         subject: { type: GraphQLString },
         body: { type: GraphQLString, require: true },
       },
