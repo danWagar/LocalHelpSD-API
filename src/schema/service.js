@@ -88,9 +88,24 @@ const service = {
     return msgThread;
   },
 
+  getUserMessageThreads: async (user_id, db) => {
+    const msgThreads = await db
+      .select('*')
+      .from('message_thread')
+      .where({ created_by: user_id })
+      .orWhere({ recipient: user_id })
+      .orderBy('last_msg_timestamp', 'desc');
+
+    return msgThreads;
+  },
+
   createNewMessageThread: async (created_by, recipient, db) => {
     const thread = await db
-      .insert({ created_by: created_by, recipient: recipient })
+      .insert({
+        created_by: created_by,
+        recipient: recipient,
+        last_msg_timestamp: db.fn.now(),
+      })
       .into('message_thread')
       .returning('*')
       .then(([thread]) => thread)
@@ -99,11 +114,16 @@ const service = {
     return thread;
   },
 
+  updateLastMessageTS: async (thread_id, db) => {
+    console.log('in updateLastMessageTS thread_id is ', thread_id);
+    await db('message_thread').where({ id: thread_id }).update({ last_msg_timestamp: db.fn.now() });
+  },
+
   insertMessage: async (message, db) => {
     if (!message.thread_id) {
       const messageThread = await service.createNewMessageThread(message.sender_id, message.receiver_id, db);
       message.thread_id = messageThread.id;
-    }
+    } else await service.updateLastMessageTS(message.thread_id, db);
 
     const result = await db
       .insert(message)

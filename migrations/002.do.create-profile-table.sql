@@ -18,7 +18,8 @@ CREATE TABLE profile (
 CREATE TABLE message_thread (
   id SERIAL PRIMARY KEY,
   created_by INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  recipient INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL
+  recipient INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  last_msg_timestamp TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE message (

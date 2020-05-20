@@ -141,11 +141,18 @@ const RootQuery = new GraphQLObjectType({
     getMessageThread: {
       type: MessageThreadType,
       args: {
-        created_by: { type: GraphQLInt },
-        recipient: { type: GraphQLInt },
+        created_by: { type: GraphQLInt, required: true },
+        recipient: { type: GraphQLInt, required: true },
       },
       resolve(parent, args, context) {
         return service.getMessageThread(args, context.app.get('db'));
+      },
+    },
+    getUserMessageThreads: {
+      type: GraphQLList(MessageThreadType),
+      args: { user_id: { type: GraphQLInt, required: true } },
+      resolve(parents, args, context) {
+        return service.getUserMessageThreads(args.user_id, context.app.get('db'));
       },
     },
     getMessageHistory: {
@@ -154,7 +161,6 @@ const RootQuery = new GraphQLObjectType({
         thread_id: { type: GraphQLInt, required: true },
       },
       resolve(parent, args, context) {
-        console.log('thread_id is ', args.thread_id);
         return service.getMessageHistory(args, context.app.get('db'));
       },
     },
