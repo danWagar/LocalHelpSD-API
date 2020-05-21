@@ -115,7 +115,6 @@ const service = {
   },
 
   updateLastMessageTS: async (thread_id, db) => {
-    console.log('in updateLastMessageTS thread_id is ', thread_id);
     await db('message_thread').where({ id: thread_id }).update({ last_msg_timestamp: db.fn.now() });
   },
 
@@ -136,10 +135,8 @@ const service = {
   },
 
   getMessageHistory: async (thread_id, db) => {
-    console.log(thread_id);
     const result = await db.select('*').from('message').where(thread_id).orderBy('date_sent');
 
-    console.log(result);
     return result;
   },
 };
