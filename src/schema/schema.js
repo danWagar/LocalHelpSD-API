@@ -1,13 +1,9 @@
 /* eslint-disable strict */
-const graphql = require('graphql');
+const { gql, PubSub } = require('apollo-server-express');
 const service = require('./service');
-const { gql } = require('apollo-server-express');
 
-// const { GraphQLObjectType, GraphQLBoolean, GraphQLString, GraphQLInt, GraphQLList, GraphQLSchema } = graphql;
+const pubsub = new PubSub();
 
-//
-//Type Definitions
-//
 const typeDefs = gql`
   type User {
     id: Int!
@@ -49,12 +45,6 @@ const typeDefs = gql`
     user: User
   }
 
-  type MessageThread {
-    id: Int!
-    created_by: Int!
-    recipient: Int!
-  }
-
   type Message {
     id: Int!
     thread_id: Int!
@@ -63,6 +53,13 @@ const typeDefs = gql`
     subject: String
     body: String!
     date_sent: String!
+  }
+
+  type MessageThread {
+    id: Int!
+    created_by: Int!
+    recipient: Int!
+    last_msg_timestamp: String!
   }
 
   type Query {
@@ -105,7 +102,13 @@ const typeDefs = gql`
 
     postMessage(thread_id: Int, sender_id: Int!, receiver_id: Int!, subject: String, body: String!): Message
   }
+
+  type Subscription {
+    messageAdded: Message
+  }
 `;
+
+const MESSAGE_ADDED = 'MESSAGE_ADDED';
 
 const resolvers = {
   Query: {
@@ -115,6 +118,7 @@ const resolvers = {
     profile: (parent, args, context) => {
       return service.getProfile(args.user_id, context.app.get('db'));
     },
+
     getProfileMatches: (parent, args, context) => {
       return service.getProfileMatches(args, context.app.get('db'));
     },
@@ -125,6 +129,7 @@ const resolvers = {
       return service.getUserMessageThreads(args.user_id, context.app.get('db'));
     },
     getMessageHistory: (parent, args, context) => {
+      console.log('fetching msgHistory');
       return service.getMessageHistory(args, context.app.get('db'));
     },
   },
@@ -146,59 +151,19 @@ const resolvers = {
     postProfile(parent, args, context) {
       return service.insertProfile(args, context.app.get('db'));
     },
-    postMessage(parent, args, context) {
-      return service.insertMessage(args, context.app.get('db'));
+    postMessage: async (parent, args, context) => {
+      const msg = await service.insertMessage(args, context.app.get('db'));
+      console.log('in message mutation msg is ', msg);
+      pubsub.publish(MESSAGE_ADDED, { messageAdded: msg });
+
+      return msg;
+    },
+  },
+  Subscription: {
+    messageAdded: {
+      subscribe: () => pubsub.asyncIterator([MESSAGE_ADDED]),
     },
   },
 };
 
 module.exports = { typeDefs, resolvers };
-
-/*
-
-
-const Mutation = new GraphQLObjectType({
-  name: 'Mutation',
-  fields: {
-    postProfile: {
-      type: ProfileType,
-      args: {
-        user_id: { type: GraphQLInt, required: true, unique: true },
-        avatar: { type: GraphQLString },
-        neighborhood: { type: GraphQLString },
-        story: { type: GraphQLString },
-        wants_help: { type: GraphQLBoolean, required: true },
-        immunocompromised: { type: GraphQLBoolean, required: true },
-        unemployment: { type: GraphQLBoolean, required: true },
-        essential: { type: GraphQLBoolean, required: true },
-        grocery_delivery: { type: GraphQLBoolean, required: true },
-        walk_dogs: { type: GraphQLBoolean, required: true },
-        donations: { type: GraphQLBoolean, required: true },
-        counceling: { type: GraphQLBoolean, required: true },
-        career_services: { type: GraphQLBoolean, required: true },
-      },
-      resolve(parent, args, context) {
-        return service.insertProfile(args, context.app.get('db'));
-      },
-    },
-    postMessage: {
-      type: MessageType,
-      args: {
-        thread_id: { type: GraphQLInt },
-        sender_id: { type: GraphQLInt, require: true },
-        receiver_id: { type: GraphQLInt, require: true },
-        subject: { type: GraphQLString },
-        body: { type: GraphQLString, require: true },
-      },
-      resolve(parent, args, context) {
-        return service.insertMessage(args, context.app.get('db'));
-      },
-    },
-  },
-});
-
-module.exports = new GraphQLSchema({
-  query: RootQuery,
-  mutation: Mutation,
-});
-*/

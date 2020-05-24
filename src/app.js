@@ -17,6 +17,11 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }) => req,
+  subscriptions: {
+    //onConnect: async (connectionParams) => {
+    //console.log(connectionParams);
+    //},
+  },
 });
 
 app.use(
@@ -42,7 +47,6 @@ app.use(function errorHandler(error, req, res, next) {
 
 server.applyMiddleware({
   app,
-  path: '/api/graphql',
 });
 // app.use(bodyParser.json());
 // app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
@@ -51,6 +55,7 @@ const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
 httpServer.listen({ port: PORT }, () => {
+  //console.log(server.subscriptionServer.connectionParams);
   console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`);
   console.log(`🚀 Subscriptions ready at ws://localhost:${PORT}${server.subscriptionsPath}`);
 });

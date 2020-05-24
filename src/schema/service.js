@@ -135,8 +135,11 @@ const service = {
   },
 
   getMessageHistory: async (thread_id, db) => {
+    console.log('in getMessageHistory service thread_id is ', thread_id);
+    console.log(db);
     const result = await db.select('*').from('message').where(thread_id).orderBy('date_sent');
 
+    console.log('in getMessageHistory service result is ', result);
     return result;
   },
 };
