@@ -4,6 +4,9 @@ const service = require('./service');
 
 const pubsub = new PubSub();
 
+const MESSAGE_ADDED = 'MESSAGE_ADDED';
+const MESSAGE_THREAD_UPDATED = 'MESSAGE_THREAD_UPDATED';
+
 const typeDefs = gql`
   type User {
     id: Int!
@@ -52,6 +55,7 @@ const typeDefs = gql`
     receiver_id: Int!
     subject: String
     body: String!
+    time_read: String
     date_sent: String!
   }
 
@@ -59,6 +63,7 @@ const typeDefs = gql`
     id: Int!
     created_by: Int!
     recipient: Int!
+    unread_messages: Boolean!
     last_msg_timestamp: String!
   }
 
@@ -101,14 +106,16 @@ const typeDefs = gql`
     ): Profile
 
     postMessage(thread_id: Int, sender_id: Int!, receiver_id: Int!, subject: String, body: String!): Message
+
+    updateMessageTimeRead(id: Int!): Message
   }
 
   type Subscription {
     messageAdded: Message
+
+    messageThreadUpdated: MessageThread
   }
 `;
-
-const MESSAGE_ADDED = 'MESSAGE_ADDED';
 
 const resolvers = {
   Query: {
@@ -152,16 +159,43 @@ const resolvers = {
       return service.insertProfile(args, context.app.get('db'));
     },
     postMessage: async (parent, args, context) => {
+      console.log(args);
       const msg = await service.insertMessage(args, context.app.get('db'));
-      console.log('in message mutation msg is ', msg);
+
+      const thread = await service.updateMessageThreadUnreadMessages(
+        args.thread_id,
+        true,
+        context.app.get('db')
+      );
+
       pubsub.publish(MESSAGE_ADDED, { messageAdded: msg });
+      pubsub.publish(MESSAGE_THREAD_UPDATED, { messageThreadUpdated: thread });
 
       return msg;
+    },
+    updateMessageTimeRead: async (parent, args, context) => {
+      const result = service.updateMessageTimeRead(args.id, context.app.get('db'));
+
+      const thread = await servce.updateMessageThreadUnreadMessages(
+        args.message.thread_id,
+        false,
+        context.app.get('db')
+      );
+      pubsub.publish(MESSAGE_THREAD_UPDATED, { messageThreadUpdated: thread });
+
+      return result;
     },
   },
   Subscription: {
     messageAdded: {
       subscribe: () => pubsub.asyncIterator([MESSAGE_ADDED]),
+    },
+
+    messageThreadUpdated: {
+      subscribe: () => {
+        console.log('subscribing to messageThreadUpdated');
+        return pubsub.asyncIterator([MESSAGE_THREAD_UPDATED]);
+      },
     },
   },
 };

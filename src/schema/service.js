@@ -114,6 +114,18 @@ const service = {
     return thread;
   },
 
+  updateMessageThreadUnreadMessages: async (id, bool, db) => {
+    console.log('in updateMessageThreadUnreadMessages ', id, bool);
+    const result = await db('message_thread')
+      .update({ unread_messages: bool })
+      .where({ id: id })
+      .returning('*')
+      .then(([thread]) => thread)
+      .then((thread) => thread);
+
+    return result;
+  },
+
   updateLastMessageTS: async (thread_id, db) => {
     await db('message_thread').where({ id: thread_id }).update({ last_msg_timestamp: db.fn.now() });
   },
@@ -134,12 +146,20 @@ const service = {
     return result;
   },
 
+  updateMessageTimeRead: async (id, db) => {
+    const result = await db('message')
+      .update({ time_read: db.fn.now() })
+      .where({ id: id })
+      .returning('*')
+      .then(([msg]) => msg)
+      .then((msg) => msg);
+
+    return result;
+  },
+
   getMessageHistory: async (thread_id, db) => {
-    console.log('in getMessageHistory service thread_id is ', thread_id);
-    console.log(db);
     const result = await db.select('*').from('message').where(thread_id).orderBy('date_sent');
 
-    console.log('in getMessageHistory service result is ', result);
     return result;
   },
 };
