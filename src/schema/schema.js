@@ -1,5 +1,6 @@
 /* eslint-disable strict */
 const { gql, PubSub } = require('apollo-server-express');
+const { withFilter } = require('graphql-subscriptions');
 const service = require('./service');
 
 const pubsub = new PubSub();
@@ -111,9 +112,9 @@ const typeDefs = gql`
   }
 
   type Subscription {
-    messageAdded: Message
+    messageAdded(thread_id: Int!): Message
 
-    messageThreadUpdated: MessageThread
+    messageThreadUpdated(id: Int!): MessageThread
   }
 `;
 
@@ -188,14 +189,24 @@ const resolvers = {
   },
   Subscription: {
     messageAdded: {
-      subscribe: () => pubsub.asyncIterator([MESSAGE_ADDED]),
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([MESSAGE_ADDED]),
+        (payload, variables) => {
+          return payload.messageAdded.thread_id === variables.thread_id;
+        }
+      ),
     },
 
     messageThreadUpdated: {
-      subscribe: () => {
-        console.log('subscribing to messageThreadUpdated');
-        return pubsub.asyncIterator([MESSAGE_THREAD_UPDATED]);
-      },
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([MESSAGE_THREAD_UPDATED]),
+        (payload, variables) => {
+          console.log('in messageThreadUpdated with filter');
+          console.log('payload is ', payload);
+          console.log('variables are ', variables);
+          return payload.messageThreadUpdated.id === variables.id;
+        }
+      ),
     },
   },
 };
