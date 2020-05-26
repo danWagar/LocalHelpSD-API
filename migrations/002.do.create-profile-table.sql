@@ -21,6 +21,7 @@ CREATE TABLE message_thread (
   recipient INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   unread_messages BOOLEAN NOT NULL DEFAULT TRUE,
   last_msg_timestamp TIMESTAMPTZ NOT NULL
+  UNIQUE(created_by, recipient);
 );
 
 CREATE TABLE message (

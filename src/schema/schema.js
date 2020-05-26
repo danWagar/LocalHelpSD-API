@@ -130,8 +130,12 @@ const resolvers = {
     getProfileMatches: (parent, args, context) => {
       return service.getProfileMatches(args, context.app.get('db'));
     },
-    getMessageThread: (parent, args, context) => {
-      return service.getMessageThread(args, context.app.get('db'));
+    getMessageThread: async (parent, args, context) => {
+      console.log('retriving messageThread with args ', args);
+      const result = await service.getMessageThread(args, context.app.get('db'));
+      console.log('retrieved messageThread is ', result);
+
+      return result;
     },
     getUserMessageThreads: (parent, args, context) => {
       return service.getUserMessageThreads(args.user_id, context.app.get('db'));
