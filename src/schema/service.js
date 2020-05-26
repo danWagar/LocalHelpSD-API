@@ -111,6 +111,8 @@ const service = {
       .then(([thread]) => thread)
       .then((thread) => thread);
 
+    console.log('new message thread created ', thread);
+
     return thread;
   },
 
