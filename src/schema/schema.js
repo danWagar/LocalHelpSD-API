@@ -64,7 +64,7 @@ const typeDefs = gql`
     id: Int!
     created_by: Int!
     recipient: Int!
-    unread_messages: Boolean!
+    notify_user: Int!
     last_msg_timestamp: String!
   }
 
@@ -114,7 +114,7 @@ const typeDefs = gql`
   type Subscription {
     messageAdded(thread_id: Int!): Message
 
-    messageThreadUpdated(id: Int!): MessageThread
+    messageThreadUpdated(user_id: Int!): MessageThread
   }
 `;
 
@@ -164,12 +164,11 @@ const resolvers = {
       return service.insertProfile(args, context.app.get('db'));
     },
     postMessage: async (parent, args, context) => {
-      console.log(args);
       const msg = await service.insertMessage(args, context.app.get('db'));
 
       const thread = await service.updateMessageThreadUnreadMessages(
         args.thread_id,
-        true,
+        args.receiver_id,
         context.app.get('db')
       );
 
@@ -208,7 +207,7 @@ const resolvers = {
           console.log('in messageThreadUpdated with filter');
           console.log('payload is ', payload);
           console.log('variables are ', variables);
-          return payload.messageThreadUpdated.id === variables.id;
+          return payload.messageThreadUpdated.notify_user === variables.user_id;
         }
       ),
     },

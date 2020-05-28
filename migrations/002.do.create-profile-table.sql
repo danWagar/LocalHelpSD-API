@@ -19,9 +19,9 @@ CREATE TABLE message_thread (
   id SERIAL PRIMARY KEY,
   created_by INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   recipient INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  unread_messages BOOLEAN NOT NULL DEFAULT TRUE,
-  last_msg_timestamp TIMESTAMPTZ NOT NULL
-  UNIQUE(created_by, recipient);
+  notify_user INTEGER,
+  last_msg_timestamp TIMESTAMPTZ NOT NULL,
+  UNIQUE(created_by, recipient)
 );
 
 CREATE TABLE message (
@@ -31,6 +31,5 @@ CREATE TABLE message (
   receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   subject VARCHAR(150),
   body TEXT NOT NULL,
-  time_read TIMESTAMPTZ,
   date_sent TIMESTAMPTZ NOT NULL DEFAULT now()
 );

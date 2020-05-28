@@ -111,15 +111,12 @@ const service = {
       .then(([thread]) => thread)
       .then((thread) => thread);
 
-    console.log('new message thread created ', thread);
-
     return thread;
   },
 
-  updateMessageThreadUnreadMessages: async (id, bool, db) => {
-    console.log('in updateMessageThreadUnreadMessages ', id, bool);
+  updateMessageThreadUnreadMessages: async (id, receiver_id, db) => {
     const result = await db('message_thread')
-      .update({ unread_messages: bool })
+      .update({ notify_user: receiver_id })
       .where({ id: id })
       .returning('*')
       .then(([thread]) => thread)
