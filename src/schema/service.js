@@ -145,10 +145,10 @@ const service = {
     return result;
   },
 
-  updateMessageTimeRead: async (id, db) => {
+  updateMessageTimeRead: async (thread_id, db) => {
     const result = await db('message')
       .update({ time_read: db.fn.now() })
-      .where({ id: id })
+      .where({ thread_id: thread_id, time_read: null })
       .returning('*')
       .then(([msg]) => msg)
       .then((msg) => msg);

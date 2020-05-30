@@ -64,7 +64,7 @@ const typeDefs = gql`
     id: Int!
     created_by: Int!
     recipient: Int!
-    notify_user: Int!
+    notify_user: Int
     last_msg_timestamp: String!
   }
 
@@ -108,7 +108,9 @@ const typeDefs = gql`
 
     postMessage(thread_id: Int, sender_id: Int!, receiver_id: Int!, subject: String, body: String!): Message
 
-    updateMessageTimeRead(id: Int!): Message
+    updateMessageTimeRead(thread_id: Int!): Message
+
+    updateMessageThreadNotification(id: Int!): MessageThread
   }
 
   type Subscription {
@@ -137,8 +139,11 @@ const resolvers = {
 
       return result;
     },
-    getUserMessageThreads: (parent, args, context) => {
-      return service.getUserMessageThreads(args.user_id, context.app.get('db'));
+    getUserMessageThreads: async (parent, args, context) => {
+      console.log('retrieving userMessageThreads');
+      const result = await service.getUserMessageThreads(args.user_id, context.app.get('db'));
+      console.log(result);
+      return result;
     },
     getMessageHistory: (parent, args, context) => {
       console.log('fetching msgHistory');
@@ -178,11 +183,11 @@ const resolvers = {
       return msg;
     },
     updateMessageTimeRead: async (parent, args, context) => {
-      const result = service.updateMessageTimeRead(args.id, context.app.get('db'));
+      const result = await service.updateMessageTimeRead(args.thread_id, context.app.get('db'));
 
-      const thread = await servce.updateMessageThreadUnreadMessages(
-        args.message.thread_id,
-        false,
+      const thread = await service.updateMessageThreadUnreadMessages(
+        args.thread_id,
+        null,
         context.app.get('db')
       );
       pubsub.publish(MESSAGE_THREAD_UPDATED, { messageThreadUpdated: thread });
@@ -204,10 +209,13 @@ const resolvers = {
       subscribe: withFilter(
         () => pubsub.asyncIterator([MESSAGE_THREAD_UPDATED]),
         (payload, variables) => {
-          console.log('in messageThreadUpdated with filter');
-          console.log('payload is ', payload);
-          console.log('variables are ', variables);
-          return payload.messageThreadUpdated.notify_user === variables.user_id;
+          const updatedThread = payload.messageThreadUpdated;
+          const userId = variables.user_id;
+          return (
+            updatedThread.notify_user === userId ||
+            ((updatedThread.created_by === userId || updatedThread.recipient === userId) &&
+              updatedThread.notify_user === null)
+          );
         }
       ),
     },
